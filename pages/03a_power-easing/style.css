@@ -1,0 +1,27 @@
+.card {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, #1dd1a1, #54a0ff);
+  border-radius: 40px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.btn {
+  width: 200px;
+  color: white;
+  padding: 10px 40px;
+  background: linear-gradient(135deg, #1dd1a1, #54a0ff);
+  border-radius: 40px;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.circle {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, #1dd1a1, #54a0ff);
+  border-radius: 50%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
