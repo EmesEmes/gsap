@@ -1,6 +1,6 @@
 .toast {
   position: absolute;
-  bottom: 20px;
+  bottom: -60px;
   color: white;
   padding: 1rem 2rem;
   border-radius: 12px;
