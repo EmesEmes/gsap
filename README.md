@@ -629,3 +629,254 @@ gsap.from(target, vars);
     * Propiedades a animar __desde__ esos valores
     * duración de la animación een segundos
     * Opcionales: delay, ease, callbacks (onStart, onComplete…), plugins (scrollTo, etc.).
+
+¿Cómo funciona?
+1. __Estado inicial__: al disparar la animación, GSAP aplica inmediatamente los valores de `vars`.
+2. __Tween__: durante `duration` segundos, interpola esos valores __hacia__ los que el elemento tenía antes de llamar a `from()`.
+3. __Resultado__: al completar, el elemento que con sus estilos orginales.
+
+> En GSAP, `from()` anima los valores de las propiedades iniciales que le proveemos, y luego, regresa a cualquier que sean los valores originales.
+
+Ejemplo: 
+
+```javascript
+gsap.from(".box", {
+  opacity: 0, // inicia invisible
+  y: 100, // inicia 100px más abajo (como translateY(100px))
+  duration: 1, //anima en un segundo
+});
+```
+
+* box empieza invisible y sale desde abajo.
+* luego se anima a sus valores originales: `opacity: 1` y `y: 0`.
+
+Algunos de los elementos que se puede animar con `from()`:
+```javascript
+gsap.from(".selector", {
+  x: 100,
+  opacity: 0,
+  scale: 0.5,
+  rotation: 45,
+  duration: 1,
+  delay: 0.3,
+  ease: "back.out(1.7)",
+  stagger: 0.2, 
+  repeat: 1,
+  yoyo: true,
+  onComplete: () => console.log("Animation finished!"),
+});
+```
+
+### gsap.fromTo()
+
+El método gsap.fromTo() da control total sobre los valores de inicio y fin de la animación en un solo llamado. A diferencia de gsap.from() (que va de values → estado actual) o gsap.to() (que va de estado actual → values), con fromTo() se define explícitamente ambos extremos:
+
+```javascript
+gsap.fromTo(
+  target,       // Selector, elemento(s) o array de objetos
+  fromVars,     // Valores iniciales
+  toVars        // Valores finales + opciones (duración, easing, callbacks…)
+);
+```
+* `target`: Que vamos a animar (selector, elemento, objeto)
+* `fromVars`: Los valores iniciales
+* `toVars`: Los valores finales.
+
+Es útil cuando: 
+* Necesitamos control exacto.
+* Encadenamos multiples animaciones.
+* No queremos que GSAP "adivine" donde terminan o comienzan las animaciones.
+
+Ejemplo:
+
+```javascript
+gsap.fromTo(
+  ".box",
+  {
+    opacity: 0, // empieza invisible
+    y: 100, // empieza 100px más abajo
+  },
+  {
+    opacity: 1, // termina completamente visible
+    y: 0, // termina en la posición normal
+    duration: 1,
+  }
+);
+```
+
+> Pensar en .fromTo() como si se estableciera una ruta GPS completa: uno mismo elige el punto de partida y el destino. Sin suposiciones automáticas: precisión total.
+
+### Stagger
+En GSAP, el stagger es una propiedad especial que permite escalonar (desfasar) el inicio de la misma animación en varios elementos de forma automática. En lugar de lanzar todos los tweens a la vez, stagger añade un pequeño retraso incremental entre cada uno, creando un efecto de “ola” o “secuencia”.
+
+Podemos escalonar: 
+* Listas simples
+* Grids complejos
+* Incluso podeemos perssonalizar el patrón o comportamiento del escalonamiento.
+
+Como funciona Stagger:
+* `stagger: 0.05`: 0.05 segundo entre que la animación de cada elemento empiece.
+* `ex: -0.05`: `Stagger negativo`, Las animaciones comienzan al revés (el último elemento comienza primero).
+
+¿Cuándo utilizarlo?
+* Micro-interacciones: desplegar menús o listas con un ligero escalonamiento.
+* Galerías: aparición en cascada de imágenes o tarjetas.
+* Efectos de cuadrícula: animar tablas, tableros o mosaicos de forma ordenada.
+
+- Stagger con objeto de configuración
+```javascript
+gsap.from(".item", {
+  opacity: 0,
+  y: 50,
+  duration: 0.8,
+  stagger: {
+    each: 0.15,        // equivalente a stagger: 0.15
+    from: "center",    // punto de inicio: "start" (por defecto), "center", "end" o un índice numérico
+    amount: 1.2,       // en lugar de each, reparte todos los elementos dentro de 1.2s
+    grid: "auto"       // o [filas, columnas] para distribuciones en cuadrícula
+  }
+});
+```
+* `each`: tiempo de desfase por elemento.
+* `from`: punto de referencia para el orden (“start”, “center”, “end”, “random” o índice).
+* `amount`: tiempo total para cubrir todos los desfases (ignora each).
+* `grid`: define un layout de filas×columnas para animaciones “en dos dimensiones”.
+
+Ejemplos avanzados:
+1. Stagger "random"
+```javascript
+gsap.to(".bola", {
+  y: 100,
+  duration: 1,
+  stagger: {
+    each: 0.1,
+    from: "random"
+  }
+});
+```
+Cada bola comienza en un orden aleatorio.
+
+2. Stagger een cuadrícula:
+
+Si se tiene una matriz de celdas
+
+```javascript
+gsap.from(".celda", {
+  scale: 0,
+  duration: 0.5,
+  stagger: {
+    grid: [4, 5],    // 4 filas, 5 columnas
+    from: [1, 2],    // empieza desde la celda en fila 1, columna 2
+    amount: 1        // todas las animaciones comienzan repartidas en 1s
+  }
+});
+```
+
+¿Por qué stagger es tan poderoso?
+1. Da a la animación un sensación de fluidez y naturalidad.
+2. Guia a la atención del usuario paso a paso.
+3. Espaciado o escalonado automático
+
+### gsap.set()
+El método gsap.set() te permite asignar valores a las propiedades de un elemento u objeto de forma instantánea, sin crear tween ni interpolación. Es ideal para preparar estados iniciales antes de animar, o para aplicar estilos dinámicos “al instante”.
+
+Firma Básica:
+
+```javascript
+gsap.set(target, vars);
+```
+
+* `target`: selector CSS, nodo(s) DOM, array de elementos o incluso un objeeto JavaScript.
+* `vars`: objeto con las propiedades y valores que se quiere aplicar inmediatamente (x, opacity, scale, backgroundColor, atributos SVG, etc.), junto con opciones como visibility, clearProps, o overwrite.
+
+Ejemplos de uso: 
+1. Estado inicial parra una entrada
+```javascript
+// Preparo las cajas para que empiecen invisibles y desplazadas
+gsap.set(".caja", {
+  opacity: 0,
+  y: 50
+});
+```
+Luego se puede animarlas con gsap.to() o gsap.from() sabiendo que parten de ese estado.
+
+2. Cambio de visibilidad inmediato
+```javascript
+// Hacer visible un menú sin animación
+gsap.set("#menu", {
+  visibility: "visible"
+});
+```
+
+3. Limpiar propiedades inline
+```javascript
+// Aplico un scale inmediato y luego elimino el estilo inline
+gsap.set(".logo", {
+  scale: 1.2,
+  clearProps: "transform"
+});
+```
+
+Características clave:
+* `Sin duración ni easing`: no hay interpolación, los valores ses aplican al momeento.
+* `overwrite`: por defecto GSAP intentará limpiar tweens conflictivos; se puede ajustar con `overwrite: false` si no se quiere que elimine otros tweens activos.
+* `clearProps`: se puede pasar `clearProps: all` o una lista de propiedades para borrar estilos inline después de aplicarlos, devolviendo el elemeento a su CSS original.
+
+## Timelines
+El método `gsap.timeline()` se utiliza para crear una instancia de línea (timeline) de tiempo que secuencia múltiples animaciones de forma controlada y sincronizada.
+
+Una línea de tiempo permite a los desarrolladores encadenar animaciones mediante métodos como .to(), .from() y .fromTo(), lo que permite un control preciso del orden y la sincronización de cada paso de la animación.
+
+A diferencia de las animaciones GSAP independientes, que se ejecutan de forma independiente, una línea de tiempo agrupa las animaciones, lo que permite un control centralizado de la reproducción mediante métodos como .play(), .pause(), .reverse() y .restart().
+
+Las líneas de tiempo también admiten funciones como posicionamiento relativo, superposición de animaciones mediante desplazamientos temporales, etiquetas para la navegación y anidación de otras líneas de tiempo, lo que las hace ideales para secuencias de animación complejas.
+
+```javascript
+// Crea un timeline con opciones globales (opcional)
+const tl = gsap.timeline({
+  defaults: { duration: 1, ease: "power2.out" },
+  paused: false,       // si se quiere arrancar detenido
+  repeat: 0,           // cuántas veces se repite (-1 infinito)
+  repeatDelay: 0.5     // retraso entre repeticiones
+});
+
+```
+
+> Una línea de tiempo en GSAP es como un plan maestro para las animaciones. Es un contenedor que alberga múltiples interpolaciones y las reproduce en secuencia, una tras otra, o incluso simultáneamente.
+
+¿Para qué sirve un timeline?
+* __Encadenar__ animaciones de forma ordenada.
+* __Controlar__ todo el conjunto como una sola pieza (play, reverse, seek).
+* __Solapar__ tweens fácilmente usando desplazamientos relativos o etiquetas.
+* __Reutilizar__ secuencias completas en diferentes partes de una app.
+
+> Cuando se empieza a pensar en las animaciones como una historia, no solo como efectos individuales, las líneas de tiempo se convierten en el mejor aliado. ¡Son la herramienta que ayuda a orquestarlo todo!
+
+Añadir Tweens
+```javascript
+tl
+  .to(".caja1", { x: 100 })           // 1) inicia en t=0
+  .to(".caja2", { y: 50 }, "-=0.5")   // 2) inicia 0.5s antes de que termine el anterior
+  .from(".titulo", { opacity: 0 })    // 3) después del segundo tween
+```
+
+Control del Timeline
+```javascript
+tl.play();        // reproduce
+tl.pause();       // pausa
+tl.reverse();     // invierte
+tl.seek(1.5);     // salta a t = 1.5s
+tl.timeScale(2);  // acelera x2
+```
+
+¿Por qué usar un timeline?
+* __Claridad__: el código de animacioneses queda agrupado y más legible.
+* __Sincronización__: controla solapes y retardos ssin calcular manualmente los `delay`.
+* __Control global__: pausar/reproducir/invertir todas las animaciones de golpe.
+* __Reutilización__: exportar un timeline y usarlo en distintos componentes o situaciones.
+
+¿Por qué es tan potente?
+* Sin retrasos molestos: GSAP gestiona el flujo por nosotros.
+* Código legible: visualiza toda la secuencia de animación de un vistazo.
+* Orden flexible: ¿ se quiere cambiarlo? ¡Solo hay que reorganizar las líneas!
+* Sensación profesional: las animaciones se ven intencionadas y fluidas.s
