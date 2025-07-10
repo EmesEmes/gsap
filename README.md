@@ -1,4 +1,4 @@
-# Ultimate GSAP Workshop Starter
+# Curso de GSAP
 
 ## Cómo utilizar GSAP
 
@@ -879,4 +879,250 @@ tl.timeScale(2);  // acelera x2
 * Sin retrasos molestos: GSAP gestiona el flujo por nosotros.
 * Código legible: visualiza toda la secuencia de animación de un vistazo.
 * Orden flexible: ¿ se quiere cambiarlo? ¡Solo hay que reorganizar las líneas!
-* Sensación profesional: las animaciones se ven intencionadas y fluidas.s
+* Sensación profesional: las animaciones se ven intencionadas y fluidas.
+
+### Controlando el timeline (línea de tiempo) - play, pause, reverse, restart
+
+Se puede controlar un Timeline de GSAP como si fuera un “reproductor” de animaciones, gracias a una serie de métodos y propiedades que permiten pausar, reproducir, invertir, saltar a un punto o ajustar la velocidad. 
+
+Métodos de control:
+
+* `.play()`: Inicia o reanuda la reproducción desde el punto actual.
+```javascript
+tl.play();
+
+```
+
+* `.pause()`: Detiene la reproducción em el instantet actual.
+```javascript
+tl.pause();
+```
+
+* `.reverse()`: Invierte la dirección de la reproducción (si estaba en marcha, comeenzará a ir hacia atrás).
+```javascript
+tl.reverse();
+```
+
+* `.restart()`: Vuelve al comienzo y arranca la reproducción. Equivale a `.pause().time(0).play()`.
+```javascript
+tl.restart();
+```
+
+* `.seek(time)`: Salta a un tiempo específico (en segundos) dentro del timeline, sin cambiar si esta pausado o no.
+```javascript
+tl.seek(1.5);  // posiciona el playhead a 1.5s
+```
+
+* `.progress(ratio)`: Ajusta el pogreso expresado como un valor entre 0 y 1.
+```javascript
+tl.progress(0.25);  // 25% de la duración total
+```
+
+* `.timeScale(value)`: Cambiia la velocidad deel timeline:
+    * `1` = velocidad normal
+    * `2` = el doble de rápido
+    * `0.5` = la mitad de la velocidad
+```javascript
+tl.timeScale(2);   // acelera 2×
+tl.timeScale(0.5); // desacelera 50%
+```
+
+* `.reverse(delay)`: Invieerte la reproducción y, si se pasa un número, espera ese tiempo antes de arrancar la inversión.
+```javascript
+tl.reverse(0.5);  // espera 0.5s, luego invierte
+```
+
+* `.repeat(value)` y `.repeatDelay(delay)`: Se puede configurar, o modificar en tiempo real, cuántas veces se repite el timeline y con qué retardo entre repeticiones.
+```javascript
+tl.repeat(2);        // se ejecuta 3 veces en total
+tl.repeatDelay(0.3); // espera 0.3s entre cada repetición
+```
+
+Callbackes de evento, podemos engancharnos a eventos globales del timeline:
+
+```javascript
+tl.eventCallback("onStart",    () => console.log("Timeline iniciado"));
+tl.eventCallback("onComplete", () => console.log("Timeline terminado"));
+tl.eventCallback("onReverseComplete", () => console.log("¡Terminó al invertir!"));
+```
+
+Propiedades de estado:
+* `tl.paused()` / `tl.paused(true | false)`: Consulta o establece si está pausado
+* `tl.reversed()` / `tl.reversed(true|false)`: Consulta o invierte el estado de rerproducción.
+* `tl.duration()`: devuelve (o ajusta) la duración total del timeline.
+
+### Position Parameter
+El “position parameter” en GSAP es ese tercer argumento opcional que ses puede pasar a métodos de un timeline (ya sea .to(), .from() o .fromTo()) para controlar exactamente cuándo debe arrancar ese tween dentro de la secuencia, sin tener que calcular delays manuales.
+
+Formas de usarlo: 
+1. Tiempo absoluto (segundos)
+```javascript
+tl.to(".caja1", { x:100, duration:1 }, 0.5)
+// empieza a los 0.5s del inicio del timeline
+```
+
+2. Offset relativo
+    * `"+=0.3"` -> retrasa 0.3s respecto al final del tween anterior.
+    * `"-=0.5"` -> addelanta 0.5s, solapando con el anterior.
+
+```javascript
+tl
+  .to(".a", { x:100, duration:1 })       // t=0 → t=1
+  .to(".b", { y:50, duration:1 }, "-=0.5")  // empieza en t=0.5
+```
+
+3. Etiquetas (labels): Primero se define un label, luego se usa como punto de anclaje: 
+```javascript
+tl
+  .addLabel("medio", 1.2)
+  .to(".caja", { scale:1.5 }, "medio")
+  .to(".otra", { opacity:1 }, "medio+=0.2")
+```
+
+4. Array de offsets (stagger avanzado): En combinaciones complejas puedes pasar un array de valores para escalonar posiciones, pero esto se ve más en configuraciones de stagger dentro de un tween suelto.
+
+### Staggered Animations with Timelines
+Las animaciones escalonadas (staggered) dentro de un Timeline permiten orquestar un grupo de elementos para que entren en escena en sucesión, pero formando parte de una secuencia lógica: en lugar de lanzar un tween suelto con stagger, se inserta dentro de la línea de tiempo, de modo que  se pueda mezclarlo con otros tweens y controlar pausas, solapamientos, etiquetas, repeticiones, etc.
+
+1. Sintaxis básica
+
+En GSASP 3 se puede animar varios elementos con stagger directamente en un `timeline.to()` (o `from`, `fromTo`)
+```javascript
+const tl = gsap.timeline({ defaults: { duration: 1 } });
+
+tl.to(".item", {
+  y: -50,
+  opacity: 1,
+  stagger: 0.2       // cada .item empieza 0.2s después de la anterior
+});
+```
+
+Aquí, todos los .item se animan en bloque, pero con un desfase interno de 0.2 s. Como está dentro de un timeline, ese bloque se considera un solo paso en la secuencia, con su propio inicio y fin.
+
+2. Controlando el bloque escalonado
+
+    1. Offset relativo al bloque: Se puede combinar ese bloquee escalonado con solapamientos o etiquetas:
+
+    ```javascript
+    tl
+      .to(".titulo", { opacity: 1 })                  // paso A
+      .to(".item", 
+        { y: -50, opacity:1, stagger: 0.15 },          // paso B: animación escalonada
+        "-=0.5"                                        // empieza 0.5s antes de que termine A
+      )
+      .to(".footer", { y: 20, opacity:1 }, "+=0.3");   // paso C
+    ```
+
+    2. Objeto de configuración de stagger: Para un control más fino
+    ```javascript
+    tl.to(".card", {
+      scale: 1,
+      opacity: 1,
+      duration: 0.8,
+      stagger: {
+        each: 0.1,          // desfase entre ítems
+        from: "center",     // orden de aparición: "start" | "center" | "end" | índice | "random"
+        amount: 0.8,        // el desfase total se reparte en 0.8s (“each” se ignora si pones amount)
+        grid: [3, 4]        // animar como si fuera una cuadrícula 3×4
+      }
+    });
+    ```
+
+3. Ventajas de usa stagger dentro de un Timeline
+  1. __Sincronización con otros tweens__: el grupo escalonaddo es un bloque más del timeline. Se puede solaparlo, retrasarlo o etiquetarlo igual que un tween individual.
+  2. __Reutilización ed secuencias__: Se puede encapsular "entrar en cascada" como parte de una animación más compleja (por ejemplo, un módulo completo que entraa, mustraa sus items, luego sale).
+
+## ScrollTrigger
+ScrollTrigger es un plugin de GSAP que permite disparar animaciones basadas en la posición de scroll del usuario, sin necesidad de depender de librerías externas de scroll o de manejar manualmente listeners. Con se puede:
+
+1. Sincronizar animaciones con el Scroll
+    * Animar elementos mientras se hace scroll, mapeando directamente el progeso del scroll a la línea de tiempo de un twee o timeline.
+    * Ejemplo:
+    ```javascript
+    gsap.to(".imagen", {
+      yPercent: -50,
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".seccion",
+        start: "top bottom",      // cuando el top de .seccion alcanza el bottom del viewport
+        end:   "bottom top",      // hasta que el bottom de .seccion alcanza el top del viewport
+        scrub: true               // enlaza el progreso de la animación al scroll
+      }
+    });
+    ```
+2. Disparar aanimaciones al entrar/salir del viewport
+    * Lanzar tweens o timelines cuando un elemento entra ("enter") o sale ("leave") del viewport o de un contenedor.
+    * Ejemplo:
+    ```javascript
+    gsap.from(".tarjeta", {
+      opacity: 0,
+      y: 50,
+      duration: 1,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: ".tarjeta",
+        start: "top 80%",     // cuando el top de .tarjeta alcanza el 80% del viewport
+        toggleActions: "play none none reverse"
+        // onEnter: "play", onLeave: "none", onEnterBack: "none", onLeaveBack: "reverse"
+      }
+    });
+    ```
+3. Opciones clave de `scrollTrigger`
+    * `trigger`: elemento que actúa como referencia de scroll.
+    * `start`/ `end`: puntos de inicio y fin, usando sintaxis `"posiciónDisparador posiciónViewport"`, p. ej. `"top center"`, `"50% 50%"`.
+    * `scrub`: si es `true` o un número, enlaza la animación aal scroll de forma fluida.
+    * `toggleActions`: controla qué ocurre en los cuatro eventos (enter, leave, enterBack, leaveBack), con palabras clave: `"play"`, `"pause"`, `"resume"`, `"reverse"`, `"reset"`, `"restart"`, `"complete"`, `"none"`.
+    * `markers`: ssi se activa (markers: true), dibuja en pantalla los puntos de `start` y `end` para depuración.
+    * `pin`: fija ("pin") un elemento en su lugar durante la animación de scroll.
+    * `pinSpacing`: controla si el espacio del elemento permanece cuando esta "pinneado"
+4. Secuencias basadas en scroll
+    * Se puede usar un timeline completo:
+    ```javascript
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: ".galeria",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 1,
+        pin: true
+      }
+    });
+    tl
+      .to(".foto1", { x: -200 })
+      .to(".foto2", { x:  200 }, "<")
+      .to(".caption", { opacity: 1 }, "-=0.5");
+    ```
+
+¿Por qué usa ScrollTrigger?
+* __Sencillez__: se puede configurar el disparador en unas pocass líneas, sin listeners manuales.
+* __Potencia__: control total del comportamiento del scroll.
+* __Flexibilidad__: "toggleActions" para gestionar qué sucede en cada escenario de scroll.
+* __Integración con Timeline__: se puede mezclar múltiples tweens y secuencias orquestadas por la posición del scroll. 
+
+
+`Scrub`
+
+En el contexto de ScrollTrigger, la opción scrub vincula el progreso de un tween o línea de tiempo directamente al desplazamiento de la página, de modo que la animación avanza o retrocede en función de cuánto se haya hecho scroll.
+
+* `scrub: true`: Sin suavizado: el progreso del tween sigue exactamente la posición de scroll, de forma “dura”.
+
+* `scrub: número` (por ejemplo scrub: 1): Introduce un retardo de interpolación entre el scroll y la animación; cuando se hace scroll, la animación “persigue” esa posición con un cierto “arrastre” o suavizado (en segundos).
+
+`Pinning`
+
+El “pinning” en ScrollTrigger te permite fijar (o “anclar”) un elemento en su posición dentro del viewport mientras el usuario hace scroll, de modo que permanezca visible aunque el resto de la página siga desplazándose. Una vez que el scroll supera el punto final definido, el elemento “despinnea” y continúa moviéndose con el flujo normal de la página.
+
+¿Cómo se activa?
+
+Dentro de la configuración de tu scrollTrigger, se debe añadir:
+
+```javascript
+scrollTrigger: {
+  trigger: ".mi-seccion",  // elemento que actúa como referencia
+  start: "top top",        // cuándo comienza el pinning
+  end: "bottom top",       // cuándo termina el pinning
+  pin: true                // activa el pin
+}
+```
+* `pin: true` -> fija el propio .mi-seccion
+* `pin: selector` -> fija otro elemento, por ejemplo .boton, #header.
